@@ -40,8 +40,9 @@ public class CashbackVerticle extends AbstractVerticle {
     final String dbPass = Optional.of(System.getenv("DB_PASS"))
         .orElseThrow(() -> new RuntimeException("DB_PASS not configured properly"));
 
-    JsonObject postgreSQLClientConfig = new JsonObject().put("host", dbHost);
-    SQLClient postgreSQLClient = PostgreSQLClient.createShared(vertx, postgreSQLClientConfig);
+    JsonObject postgreSQLClientConfig = new JsonObject().put("host", dbHost).put("user",dbUser).put("password",dbPass);
+
+    SQLClient postgreSQLClient = PostgreSQLClient.createNonShared(vertx, postgreSQLClientConfig);
 
     RegisterCashbackTransactionGrpc.RegisterCashbackTransactionImplBase service = new RegisterCashbackTransactionGrpc.RegisterCashbackTransactionImplBase(){
       @Override

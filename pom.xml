@@ -11,6 +11,8 @@
   <properties>
     <vertx.version>3.5.3</vertx.version>
     <vertx.grpc.version>1.9.0</vertx.grpc.version>
+    <docker-plugin.version>3.5.40</docker-plugin.version>
+    <vertx.verticle>com.sensedia.cashback.infra.verticle.CashbackVerticle</vertx.verticle>
   </properties>
 
   <dependencies>
@@ -33,9 +35,17 @@
       <version>${vertx.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-health-check</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+
   </dependencies>
 
   <build>
+
+    <finalName>cashback</finalName>
 
     <extensions>
       <extension>
@@ -88,6 +98,81 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>io.reactiverse</groupId>
+        <artifactId>vertx-maven-plugin</artifactId>
+        <version>1.0.17</version>
+        <executions>
+          <execution>
+            <id>vmp</id>
+            <goals>
+              <goal>initialize</goal>
+              <goal>package</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <redeploy>true</redeploy>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>fabric8-maven-plugin</artifactId>
+        <version>${docker-plugin.version}</version>
+        <configuration>
+          <resources>
+            <env>
+              <REDIS_HOST>redis-master</REDIS_HOST>
+            </env>
+            <labels>
+              <deployment>
+                <property>
+                  <name>version</name>
+                  <value>v1</value>
+                </property>
+                <property>
+                  <name>expose</name>
+                  <value>false</value>
+                </property>
+              </deployment>
+            </labels>
+          </resources>
+          <images>
+            <image>
+              <name>claudioed/${project.build.finalName}</name>
+              <build>
+                <from>openjdk:8-jre-alpine3.7</from>
+                <entryPoint>java -jar /app/${project.build.finalName}.jar</entryPoint>
+                <assembly>
+                  <basedir>/app</basedir>
+                  <descriptorRef>artifact</descriptorRef>
+                  <inline>
+                    <id>assembly</id>
+                    <files>
+                      <file>
+                        <source>target/${project.build.finalName}.jar</source>
+                      </file>
+                    </files>
+                  </inline>
+                </assembly>
+                <tags>
+                  <tag>${project.version}</tag>
+                </tags>
+                <ports>
+                  <port>8080</port>
+                </ports>
+              </build>
+              <run>
+                <namingStrategy>alias</namingStrategy>
+              </run>
+              <alias>${project.build.finalName}</alias>
+            </image>
+          </images>
+        </configuration>
       </plugin>
 
     </plugins>
