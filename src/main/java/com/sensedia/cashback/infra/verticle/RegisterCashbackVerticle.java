@@ -1,6 +1,8 @@
 package com.sensedia.cashback.infra.verticle;
 
+import com.sensedia.cashback.domain.RegisterCashback;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -19,7 +21,7 @@ public class RegisterCashbackVerticle extends AbstractVerticle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RegisterCashbackVerticle.class);
 
-  private static final String INSERT_CASHBACK_EVENT = "INSERT INTO cashback (id, type, user_id, user_email, store, order_id, order_total) values (?,?,?,?,?,?,?)";
+  private static final String INSERT_CASHBACK_EVENT = "INSERT INTO cashback (id, type, user_id, user_email, store, order_id, order_total,points_earned) values (?,?,?,?,?,?,?,?)";
 
   @Override
   public void start() {
@@ -38,8 +40,13 @@ public class RegisterCashbackVerticle extends AbstractVerticle {
         .put("database", database);
 
     SQLClient postgreSQLClient = PostgreSQLClient.createNonShared(vertx, postgreSQLClientConfig);
-    vertx.eventBus().<JsonArray>consumer("register.cashback", handler -> {
-      final JsonArray params = handler.body();
+    vertx.eventBus().<String>consumer("register.cashback", handler -> {
+      final RegisterCashback registerCashback = Json.decodeValue(handler.body(), RegisterCashback.class);
+
+      JsonArray params = new JsonArray().add(registerCashback.getId()).add(registerCashback.getType()).add(registerCashback.getUserId())
+          .add(registerCashback.getUserEmail()).add(registerCashback.getStoreName())
+          .add(registerCashback.getOrderId()).add(registerCashback.getOrderTotal()).add(registerCashback.getPointsEarned());
+
       postgreSQLClient.getConnection(res -> {
         if (res.succeeded()) {
           final SQLConnection connection = res.result();
@@ -49,8 +56,8 @@ public class RegisterCashbackVerticle extends AbstractVerticle {
               final String cashbackId = UUID.randomUUID().toString();
               connection
                   .updateWithParams(INSERT_CASHBACK_EVENT, params, updateResultAsyncResult -> {
-                    LOGGER.info("Cashback register created successfully.. ID: " + cashbackId);
-
+                    LOGGER.info("Cashback register created successfully. ID: " + cashbackId);
+                    vertx.eventBus().send("notify.credit.card",Json.encode(registerCashback));
                     handler.reply(new JsonObject().put("id", cashbackId));
 
                   });

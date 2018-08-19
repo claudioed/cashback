@@ -21,6 +21,7 @@ message RegisterCashbackRequest {
     User user = 2;
     Order order = 3;
     Store store = 4;
+    double pointsEarned = 5;
 }
 
 message RegisterCashbackResponse {
