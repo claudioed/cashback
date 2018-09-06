@@ -8,8 +8,6 @@ import com.sensedia.cashback.infra.proto.RegisterCashbackTransactionGrpc;
 import io.grpc.stub.StreamObserver;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.grpc.VertxServer;
@@ -52,9 +50,8 @@ public class CashbackVerticle extends AbstractVerticle {
         .forAddress(vertx, "localhost", 8080)
         .addService(service)
         .build();
-
     vertx.deployVerticle(new RegisterCashbackVerticle());
-
+    vertx.deployVerticle(new NotifyTransactionVerticle());
     rpcServer.start();
 
   }
