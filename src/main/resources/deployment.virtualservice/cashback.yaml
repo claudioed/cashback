@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: "cashback-route-default"
+spec:
+  hosts:
+  - "cashback"
+  gateways:
+  - "ecommerce-gateway"
+  http:
+  - route:
+    - destination:
+        host: "cashback"
+        subset: v1
